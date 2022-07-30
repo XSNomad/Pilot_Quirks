@@ -1,19 +1,12 @@
-﻿using System;
-using System.Reflection;
-using BattleTech;
-using Harmony;
+﻿using BattleTech;
+using BattleTech.Data;
 using BattleTech.UI;
-using Newtonsoft.Json;
-using System.IO;
-using UnityEngine;
+using Harmony;
+using HBS.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
-using Localize;
-using Error = BestHTTP.SocketIO.Error;
 using Logger = Pilot_Quirks.Pre_Control.Helper.Logger;
-using HBS.Collections;
-using BattleTech.Data;
 
 namespace Pilot_Quirks
 {
@@ -46,7 +39,7 @@ namespace Pilot_Quirks
                         string PilotTattoo = "PQ_Pilot_GUID_" + PQ_GUID;
                         pilot.PilotTags.Add(PilotTattoo);
                         PQ_GUID++;
-                        
+
                         // Add training in a Chameleon if Inner sphere
                         if (pilot.PilotTags.Contains("pilot_davion") ||
                             pilot.PilotTags.Contains("pilot_liao") ||
@@ -63,14 +56,16 @@ namespace Pilot_Quirks
                             {
                                 if (!PilotsAndMechs.Keys.Contains(PilotTattoo))
                                 {
-                                    Dictionary<string, int> tempD = new Dictionary<string, int>();
-                                    tempD.Add("Chameleon", trainingDrops);
+                                    Dictionary<string, int> tempD = new Dictionary<string, int>
+                                    {
+                                        { "Chameleon", trainingDrops }
+                                    };
                                     PilotsAndMechs.Add(PilotTattoo, tempD);
                                     drops -= trainingDrops;
                                 }
                             }
                         }
-                        
+
                         if (drops > 0)
                         {
                             int thisDrops1 = UnityEngine.Random.Range(1, drops);
@@ -87,7 +82,7 @@ namespace Pilot_Quirks
                             {
                                 thisDrops3 = drops;
                             }
-                            
+
                             List<string> includes = new List<string>();
                             List<string> excludes = new List<string>();
 
@@ -117,7 +112,7 @@ namespace Pilot_Quirks
                             {
                                 team = "AuriganMercenaries";
                             }
-                            
+
                             includes.Add("unit_mech");
 
                             excludes.Add($"unit_very_rare_{team}");
@@ -135,22 +130,24 @@ namespace Pilot_Quirks
                             {
                                 excludes.Add("unit_heavy");
                             }
-                            
+
                             TagSet unitTagSet = new TagSet(includes);
                             TagSet unitExcludedTagSet = new TagSet(excludes);
 
                             DataManager dm = __instance.Sim.DataManager;
                             List<UnitDef_MDD> list = MetadataDatabase.Instance.GetMatchingUnitDefs(unitTagSet, unitExcludedTagSet, true, __instance.Sim.CurrentDate, __instance.Sim.CompanyTags);
-                            
+
                             string mechName = "";
                             if (list.Count > 0)
                             {
-                                list.Shuffle<UnitDef_MDD>();
+                                list.Shuffle();
                                 mechName = dm.MechDefs.Get(list[0].UnitDefID).Chassis.Description.UIName;
                                 if (!PilotsAndMechs.Keys.Contains(PilotTattoo))
                                 {
-                                    Dictionary<string, int> tempD = new Dictionary<string, int>();
-                                    tempD.Add(mechName, thisDrops3);
+                                    Dictionary<string, int> tempD = new Dictionary<string, int>
+                                    {
+                                        { mechName, thisDrops3 }
+                                    };
                                     PilotsAndMechs.Add(PilotTattoo, tempD);
                                 }
                                 else if (PilotsAndMechs[PilotTattoo].ContainsKey(mechName))
@@ -166,8 +163,10 @@ namespace Pilot_Quirks
                             {
                                 if (!PilotsAndMechs.Keys.Contains(PilotTattoo))
                                 {
-                                    Dictionary<string, int> tempD = new Dictionary<string, int>();
-                                    tempD.Add("Griffin", thisDrops3);
+                                    Dictionary<string, int> tempD = new Dictionary<string, int>
+                                    {
+                                        { "Griffin", thisDrops3 }
+                                    };
                                     PilotsAndMechs.Add(PilotTattoo, tempD);
                                 }
                                 else if (PilotsAndMechs[PilotTattoo].ContainsKey("Griffin"))
@@ -179,13 +178,13 @@ namespace Pilot_Quirks
                                     PilotsAndMechs[PilotTattoo].Add("Griffin", thisDrops3);
                                 }
                             }
-                            
+
                             excludes.Add($"unit_rare_{team}");
                             list = MetadataDatabase.Instance.GetMatchingUnitDefs(unitTagSet, unitExcludedTagSet, true, __instance.Sim.CurrentDate, __instance.Sim.CompanyTags);
 
                             if (list.Count > 0)
                             {
-                                list.Shuffle<UnitDef_MDD>();
+                                list.Shuffle();
                                 mechName = dm.MechDefs.Get(list[0].UnitDefID).Chassis.Description.UIName;
                                 if (PilotsAndMechs[PilotTattoo].ContainsKey(mechName))
                                 {
@@ -213,7 +212,7 @@ namespace Pilot_Quirks
 
                             if (list.Count > 0)
                             {
-                                list.Shuffle<UnitDef_MDD>();
+                                list.Shuffle();
                                 mechName = dm.MechDefs.Get(list[0].UnitDefID).Chassis.Description.UIName;
                                 if (PilotsAndMechs[PilotTattoo].ContainsKey(mechName))
                                 {
@@ -283,12 +282,11 @@ namespace Pilot_Quirks
         [HarmonyPatch(typeof(AAR_UnitStatusWidget), "FillInPilotData")]
         public static class AAR_UnitStatusWidget_FillInPilotData_Prefix
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Prefix(AAR_UnitStatusWidget __instance, SimGameState ___simState)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
 
-                UnitResult unitResult = Traverse.Create(__instance).Field("UnitData").GetValue<UnitResult>();
+                UnitResult unitResult = __instance.UnitData; // Traverse.Create(__instance).Field("UnitData").GetValue<UnitResult>();
                 if (!unitResult.pilot.pilotDef.PilotTags.Contains("PQ_Mech_Mastery"))
                     unitResult.pilot.pilotDef.PilotTags.Add("PQ_Mech_Mastery");
 
@@ -317,11 +315,9 @@ namespace Pilot_Quirks
         [HarmonyPatch("Piloting", MethodType.Getter)]
         public class Pilot_Piloting_Patch
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Postfix(Pilot __instance, ref int __result)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
-
                 if (__instance.pilotDef.PilotTags.Contains("PQ_pilot_regular"))
                     __result += 1;
             }
@@ -331,11 +327,9 @@ namespace Pilot_Quirks
         [HarmonyPatch("Gunnery", MethodType.Getter)]
         public class Pilot_Gunnery_Patch
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Postfix(Pilot __instance, ref int __result)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
-
                 if (__instance.pilotDef.PilotTags.Contains("PQ_pilot_elite"))
                     __result += 1;
             }
@@ -344,11 +338,9 @@ namespace Pilot_Quirks
         [HarmonyPatch(typeof(LineOfSight), "GetAllSensorRangeAbsolutes")]
         public static class LineOfSight_GetAllSensorRangeAbsolutes_Patch
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Postfix(AbstractActor source, ref float __result)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
-
                 Pilot pilot = source.GetPilot();
                 if (pilot.pilotDef.PilotTags.Contains("PQ_pilot_veteran"))
                     __result += pilot.Tactics * 5;
@@ -358,11 +350,9 @@ namespace Pilot_Quirks
         [HarmonyPatch(typeof(LineOfSight), "GetAllSpotterAbsolutes")]
         public static class LineOfSight_GetAllSpotterAbsolutes_Patch
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Postfix(AbstractActor source, ref float __result)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
-
                 Pilot pilot = source.GetPilot();
                 if (pilot.pilotDef.PilotTags.Contains("PQ_pilot_veteran"))
                     __result += pilot.Tactics * 5;
@@ -373,11 +363,9 @@ namespace Pilot_Quirks
         [HarmonyPatch(typeof(CombatHUDMWStatus), "InitForPilot")]
         public static class CombatHUDMWStatus_InitForPilot_Patches
         {
+            public static bool Prepare() => Pre_Control.settings.MechBonding;
             public static void Prefix(AbstractActor actor, Pilot pilot)
             {
-                if (!Pre_Control.settings.MechBonding)
-                    return;
-
                 //I've added a silent catch to deal with NPC pilots. 
                 try
                 {
@@ -390,16 +378,18 @@ namespace Pilot_Quirks
 
                         if (!HasTattoo)
                         {
-                            pilot.pilotDef.PilotTags.Add("PQ_Pilot_GUID_" + MechBonding.PQ_GUID);
-                            MechBonding.PQ_GUID++;
+                            pilot.pilotDef.PilotTags.Add("PQ_Pilot_GUID_" + PQ_GUID);
+                            PQ_GUID++;
                         }
 
                         string PilotTattoo = pilot.pilotDef.PilotTags.First(x => x.StartsWith("PQ_Pilot_GUID"));
                         //Add to the counter for 'Mech piloting.
                         if (!PilotsAndMechs.Keys.Contains(PilotTattoo))
                         {
-                            Dictionary<string, int> tempD = new Dictionary<string, int>();
-                            tempD.Add(ourMech.MechDef.Chassis.Description.UIName, 1);
+                            Dictionary<string, int> tempD = new Dictionary<string, int>
+                            {
+                                { ourMech.MechDef.Chassis.Description.UIName, 1 }
+                            };
                             PilotsAndMechs.Add(PilotTattoo, tempD);
                         }
                         else if (!PilotsAndMechs[PilotTattoo].Keys.Contains(ourMech.MechDef.Chassis.Description.UIName))
@@ -439,7 +429,7 @@ namespace Pilot_Quirks
                 }
                 catch (Exception e)
                 {
-                    Pre_Control.Helper.Logger.LogError(e);
+                    Logger.LogError(e);
                 }
             }
         }

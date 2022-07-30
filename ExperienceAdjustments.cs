@@ -1,16 +1,9 @@
-﻿using System;
-using System.Reflection;
-using BattleTech;
-using Harmony;
+﻿using BattleTech;
 using BattleTech.UI;
-using Newtonsoft.Json;
-using System.IO;
-using UnityEngine;
+using Harmony;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using Localize;
-using Error = BestHTTP.SocketIO.Error;
+using UnityEngine;
 using Logger = Pilot_Quirks.Pre_Control.Helper.Logger;
 
 namespace Pilot_Quirks
@@ -59,22 +52,22 @@ namespace Pilot_Quirks
 
             for (int i = pilotdef.SkillGunnery; i > minLevel; i--)
             {
-                TotalXP += Mathf.CeilToInt(Mathf.Pow((float)i, (exp + exp * Pre_Control.settings.pilot_XP_change))
+                TotalXP += Mathf.CeilToInt(Mathf.Pow(i, (exp + exp * Pre_Control.settings.pilot_XP_change))
                     * (mult + mult * Pre_Control.settings.pilot_XP_change));
             }
             for (int i = pilotdef.SkillPiloting; i > 1; i--)
             {
-                TotalXP += Mathf.CeilToInt(Mathf.Pow((float)i, (exp + exp * Pre_Control.settings.pilot_XP_change))
+                TotalXP += Mathf.CeilToInt(Mathf.Pow(i, (exp + exp * Pre_Control.settings.pilot_XP_change))
                     * (mult + mult * Pre_Control.settings.pilot_XP_change));
             }
             for (int i = pilotdef.SkillGuts; i > 1; i--)
             {
-                TotalXP += Mathf.CeilToInt(Mathf.Pow((float)i, (exp + exp * Pre_Control.settings.pilot_XP_change))
+                TotalXP += Mathf.CeilToInt(Mathf.Pow(i, (exp + exp * Pre_Control.settings.pilot_XP_change))
                     * (mult + mult * Pre_Control.settings.pilot_XP_change));
             }
             for (int i = pilotdef.SkillTactics; i > 1; i--)
             {
-                TotalXP += Mathf.CeilToInt(Mathf.Pow((float)i, (exp + exp * Pre_Control.settings.pilot_XP_change))
+                TotalXP += Mathf.CeilToInt(Mathf.Pow(i, (exp + exp * Pre_Control.settings.pilot_XP_change))
                     * (mult + mult * Pre_Control.settings.pilot_XP_change));
             }
             return TotalXP;
@@ -93,7 +86,7 @@ namespace Pilot_Quirks
                     isBookish = pilot.pilotDef.PilotTags.Contains("pilot_bookish");
                     isKlutz = pilot.pilotDef.PilotTags.Contains("pilot_klutz");
                     isAssassin = pilot.pilotDef.PilotTags.Contains("pilot_assassin");
-                    
+
                     if (isBookish || isKlutz || isAssassin)
                     {
                         int NewXP = 0;
@@ -136,7 +129,7 @@ namespace Pilot_Quirks
                         int XPAdjust = NewXP - pilot.pilotDef.ExperienceUnspent;
                         pilot.AddExperience(0, "Respec", XPAdjust);
                     }
-                   
+
                 }
                 catch (Exception e)
                 {
@@ -168,7 +161,7 @@ namespace Pilot_Quirks
                 }
                 catch (Exception e)
                 {
-                    Pre_Control.Helper.Logger.LogError(e);
+                    Logger.LogError(e);
                 }
             }
 
@@ -181,7 +174,7 @@ namespace Pilot_Quirks
                 }
                 catch (Exception e)
                 {
-                    Pre_Control.Helper.Logger.LogError(e);
+                    Logger.LogError(e);
                 }
             }
         }
@@ -260,80 +253,80 @@ namespace Pilot_Quirks
             }
         }
 
-            [HarmonyPatch(typeof(SGBarracksSkillPip), "Initialize")]
-            public static class SGBarracksSkillPip_Initialize_Patch
+        [HarmonyPatch(typeof(SGBarracksSkillPip), "Initialize")]
+        public static class SGBarracksSkillPip_Initialize_Patch
+        {
+            public static void Prefix(string type, int index, ref int cost)
             {
-                public static void Prefix(string type, int index, ref int cost)
+                var sim = UnityGameInstance.BattleTechGame.Simulation;
+                try
                 {
-                    var sim = UnityGameInstance.BattleTechGame.Simulation;
-                    try
+                    isIncreased = false;
+                    isDecreased = false;
+                    if (isBookish || isKlutz || isAssassin)
                     {
-                        isIncreased = false;
-                        isDecreased = false;
-                        if (isBookish || isKlutz || isAssassin)
+                        if (type == "Piloting")
                         {
-                            if (type == "Piloting")
-                            {
-                                if (isKlutz)
-                                    isIncreased = true;
-                                else
-                                    isIncreased = false;
-
-                                isDecreased = false;
-                                cost = sim.GetLevelCost(index);
-                            }
-                            if (type == "Gunnery")
-                            {
+                            if (isKlutz)
+                                isIncreased = true;
+                            else
                                 isIncreased = false;
+
+                            isDecreased = false;
+                            cost = sim.GetLevelCost(index);
+                        }
+                        if (type == "Gunnery")
+                        {
+                            isIncreased = false;
 
                             if (isAssassin)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                cost = sim.GetLevelCost(index);
-                            }
+                            cost = sim.GetLevelCost(index);
+                        }
 
-                            if (type == "Guts")
-                            {
+                        if (type == "Guts")
+                        {
                             if (isBookish)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                                cost = sim.GetLevelCost(index);
-                            }
-                            if (type == "Tactics")
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                            cost = sim.GetLevelCost(index);
+                        }
+                        if (type == "Tactics")
+                        {
+                            isIncreased = false;
 
                             if (isBookish)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                cost = sim.GetLevelCost(index);
-                            }
+                            cost = sim.GetLevelCost(index);
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e);
-                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
                 }
             }
+        }
 
-            [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "OnValueClick")]
-            public static class SGBarracksAdvancementPanel_OnValueClick_Patch
+        [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "OnValueClick")]
+        public static class SGBarracksAdvancementPanel_OnValueClick_Patch
+        {
+            public static void Prefix(SGBarracksAdvancementPanel __instance, string type)
             {
-                public static void Prefix(SGBarracksAdvancementPanel __instance, string type)
+                try
                 {
-                    try
-                    {
-                        isBookish = false;
-                        if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
-                            isBookish = true;
+                    isBookish = false;
+                    if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
+                        isBookish = true;
 
                     isKlutz = false;
                     if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_klutz"))
@@ -344,74 +337,74 @@ namespace Pilot_Quirks
                         isAssassin = true;
 
                     OnValueClick = true;
-                        if (isBookish || isKlutz || isAssassin)
+                    if (isBookish || isKlutz || isAssassin)
+                    {
+                        if (type == "Piloting")
                         {
-                            if (type == "Piloting")
-                            {
                             if (isKlutz)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                            }
-                            if (type == "Gunnery")
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                        }
+                        if (type == "Gunnery")
+                        {
+                            isIncreased = false;
 
                             if (isAssassin)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
-                            }
-                            if (type == "Guts")
-                            {
+                        }
+                        if (type == "Guts")
+                        {
                             if (isBookish)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                            }
-                            if (type == "Tactics")
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                        }
+                        if (type == "Tactics")
+                        {
+                            isIncreased = false;
 
                             if (isBookish)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
-                            }
-                        }
-                        else
-                        {
-                            isIncreased = false;
-                            isDecreased = false;
                         }
                     }
-                    catch (Exception e)
+                    else
                     {
-                        Logger.LogError(e);
+                        isIncreased = false;
+                        isDecreased = false;
                     }
                 }
-                public static void Postfix()
+                catch (Exception e)
                 {
-                    isIncreased = false;
-                    isDecreased = false;
+                    Logger.LogError(e);
                 }
             }
-
-            [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetTempPilotSkill")]
-            public static class SGBarracksAdvancementPanel_SetTempPilotSkill_Patch
+            public static void Postfix()
             {
-                public static void Prefix(SGBarracksAdvancementPanel __instance, string type, int skill, ref int expAmount)
+                isIncreased = false;
+                isDecreased = false;
+            }
+        }
+
+        [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetTempPilotSkill")]
+        public static class SGBarracksAdvancementPanel_SetTempPilotSkill_Patch
+        {
+            public static void Prefix(SGBarracksAdvancementPanel __instance, string type, int skill, ref int expAmount)
+            {
+                var sim = UnityGameInstance.BattleTechGame.Simulation;
+                try
                 {
-                    var sim = UnityGameInstance.BattleTechGame.Simulation;
-                    try
-                    {
-                        isBookish = false;
-                        if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
-                            isBookish = true;
+                    isBookish = false;
+                    if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
+                        isBookish = true;
 
                     isKlutz = false;
                     if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_klutz"))
@@ -426,91 +419,91 @@ namespace Pilot_Quirks
                         twiddle = 1;
 
                     if (isBookish || isKlutz || isAssassin)
+                    {
+                        if (type == "Piloting")
                         {
-                            if (type == "Piloting")
-                            {
                             if (isKlutz)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                                expAmount = twiddle * sim.GetLevelCost(skill);
-                            }
-                            if (type == "Gunnery")
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                            expAmount = twiddle * sim.GetLevelCost(skill);
+                        }
+                        if (type == "Gunnery")
+                        {
+                            isIncreased = false;
 
                             if (isAssassin)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                expAmount = twiddle * sim.GetLevelCost(skill);
-                            }
-                            if (type == "Guts")
-                            {
+                            expAmount = twiddle * sim.GetLevelCost(skill);
+                        }
+                        if (type == "Guts")
+                        {
                             if (isBookish)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
-                            
-                                isDecreased = false;
-                                expAmount = twiddle * sim.GetLevelCost(skill);
-                            }
-                            if (type == "Tactics")
-                            {
-                                isIncreased = false;
+
+                            isDecreased = false;
+                            expAmount = twiddle * sim.GetLevelCost(skill);
+                        }
+                        if (type == "Tactics")
+                        {
+                            isIncreased = false;
                             if (isBookish)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                expAmount = twiddle * sim.GetLevelCost(skill);
-                            }
+                            expAmount = twiddle * sim.GetLevelCost(skill);
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e);
-                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
                 }
             }
+        }
 
-            [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetPilot")]
-            public static class SGBarracksAdvancementPanel_SetPilot_Patch
+        [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetPilot")]
+        public static class SGBarracksAdvancementPanel_SetPilot_Patch
+        {
+            public static void Prefix(SGBarracksAdvancementPanel __instance)
             {
-                public static void Prefix(SGBarracksAdvancementPanel __instance)
+                try
                 {
-                    try
-                    {
-                        isBookish = false;
+                    isBookish = false;
                     isKlutz = false;
-                        if (__instance.curPilot == null)
-                            return;
-                        if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
-                            isBookish = true;
+                    if (__instance.curPilot == null)
+                        return;
+                    if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
+                        isBookish = true;
                     if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_klutz"))
                         isKlutz = true;
                     if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_assassin"))
                         isAssassin = true;
                 }
-                    catch (Exception e)
-                    {
-                        Pre_Control.Helper.Logger.LogError(e);
-                    }
+                catch (Exception e)
+                {
+                    Logger.LogError(e);
                 }
             }
-            [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetPips")]
-            public static class SGBarracksAdvancementPanel_SetPips_Patch
+        }
+        [HarmonyPatch(typeof(SGBarracksAdvancementPanel), "SetPips")]
+        public static class SGBarracksAdvancementPanel_SetPips_Patch
+        {
+            public static void Prefix(SGBarracksAdvancementPanel __instance, List<SGBarracksSkillPip> pips, ref bool needsXP, int idx)
             {
-                public static void Prefix(SGBarracksAdvancementPanel __instance, List<SGBarracksSkillPip> pips, ref bool needsXP, int idx)
+                try
                 {
-                    try
-                    {
-                        isBookish = false;
-                        if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
-                            isBookish = true;
+                    isBookish = false;
+                    if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_bookish"))
+                        isBookish = true;
 
                     isKlutz = false;
                     if (__instance.curPilot.pilotDef.PilotTags.Contains("pilot_klutz"))
@@ -521,81 +514,81 @@ namespace Pilot_Quirks
                         isAssassin = true;
 
                     var sim = UnityGameInstance.BattleTechGame.Simulation;
-                        if (__instance.curPilot == null)
-                            return;
-                        Pilot p = __instance.curPilot;
-                        isIncreased = false;
-                        isDecreased = false;
-                        if (isBookish || isKlutz || isAssassin)
+                    if (__instance.curPilot == null)
+                        return;
+                    Pilot p = __instance.curPilot;
+                    isIncreased = false;
+                    isDecreased = false;
+                    if (isBookish || isKlutz || isAssassin)
+                    {
+                        if (pips == __instance.pilotPips)
                         {
-                            if (pips == __instance.pilotPips)
-                            {
                             if (isKlutz)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                                bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
-                                needsXP = XPLevelCheck && p.Piloting - 1 < idx;
-                            }
-                            if (pips == __instance.gunPips)
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                            bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
+                            needsXP = XPLevelCheck && p.Piloting - 1 < idx;
+                        }
+                        if (pips == __instance.gunPips)
+                        {
+                            isIncreased = false;
 
                             if (isAssassin)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
-                                needsXP = XPLevelCheck && p.Gunnery - 1 < idx;
-                            }
-                            if (pips == __instance.gutPips)
-                            {
+                            bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
+                            needsXP = XPLevelCheck && p.Gunnery - 1 < idx;
+                        }
+                        if (pips == __instance.gutPips)
+                        {
                             if (isBookish)
                                 isIncreased = true;
                             else
                                 isIncreased = false;
 
-                                isDecreased = false;
-                                bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
-                                needsXP = XPLevelCheck && p.Guts - 1 < idx;
-                            }
-                            if (pips == __instance.tacPips)
-                            {
-                                isIncreased = false;
+                            isDecreased = false;
+                            bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
+                            needsXP = XPLevelCheck && p.Guts - 1 < idx;
+                        }
+                        if (pips == __instance.tacPips)
+                        {
+                            isIncreased = false;
 
                             if (isBookish)
                                 isDecreased = true;
                             else
                                 isDecreased = false;
 
-                                bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
-                                needsXP = XPLevelCheck && p.Tactics - 1 < idx;
-                            }
-                            isIncreased = false;
-                            isDecreased = false;
+                            bool XPLevelCheck = p.UnspentXP < sim.GetLevelCost(idx);
+                            needsXP = XPLevelCheck && p.Tactics - 1 < idx;
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Pre_Control.Helper.Logger.LogError(e);
+                        isIncreased = false;
+                        isDecreased = false;
                     }
                 }
-            }
-            [HarmonyPatch(typeof(SGBarracksMWDetailPanel), "DisplayPilot")]
-            public static class SGBarracksMWDetailPanel_DisplayPilot_Patch
-            {
-                public static void Prefix(SGBarracksMWDetailPanel __instance, Pilot p)
+                catch (Exception e)
                 {
+                    Logger.LogError(e);
+                }
+            }
+        }
+        [HarmonyPatch(typeof(SGBarracksMWDetailPanel), "DisplayPilot")]
+        public static class SGBarracksMWDetailPanel_DisplayPilot_Patch
+        {
+            public static void Prefix(SGBarracksMWDetailPanel __instance, Pilot p)
+            {
                 UseSavedPilot = true;
                 SavedPilot = p;
-                    isBookish = false;
-                    if (p.pilotDef.PilotTags.Contains("pilot_bookish"))
-                    {
-                        isBookish = true;
-                    }
+                isBookish = false;
+                if (p.pilotDef.PilotTags.Contains("pilot_bookish"))
+                {
+                    isBookish = true;
+                }
 
                 isKlutz = false;
                 if (p.pilotDef.PilotTags.Contains("pilot_klutz"))

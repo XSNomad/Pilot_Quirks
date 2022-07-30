@@ -1,15 +1,9 @@
-﻿using System;
-using System.Reflection;
-using BattleTech;
-using Harmony;
+﻿using BattleTech;
 using BattleTech.UI;
-using Newtonsoft.Json;
-using System.IO;
-using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
 using BattleTech.UI.Tooltips;
+using Harmony;
 using HBS.Collections;
+using System.Linq;
 
 namespace Pilot_Quirks
 {
@@ -95,7 +89,7 @@ namespace Pilot_Quirks
             public static void Postfix(string id, TagDataStruct __result)
             {
                 if (id == "HACK_GENCON_UNIT")
-                    __result.DescriptionTag += MechMasterTagDescription(UI_Changes.PilotHolder, __result.DescriptionTag);
+                    __result.DescriptionTag += MechMasterTagDescription(PilotHolder, __result.DescriptionTag);
 
                 if (!Pre_Control.settings.TagIDToDescription.ContainsKey(id))
                     return;
@@ -136,7 +130,7 @@ namespace Pilot_Quirks
 
                     string DescriptionName = MasteryTier + " 'Mech Pilot";
 
-                    var item = new TagDataStruct("HACK_GENCON_UNIT", true, true, "name", DescriptionName , "description");
+                    var item = new TagDataStruct("HACK_GENCON_UNIT", true, true, "name", DescriptionName, "description");
                     string contextItem = string.Format("{0}[{1}]", "TDSF", item.Tag);
                     string friendlyName = item.FriendlyName;
                     var itemTT = TooltipUtilities.GetGameContextTooltipString(contextItem, friendlyName);
@@ -160,7 +154,7 @@ namespace Pilot_Quirks
                 return "<b>No 'Mech mastery.</b>";
 
             var MechExperience = MechBonding.PilotsAndMechs[PilotTattoo];
-           
+
             string TierOneString = "\n• Reduced Fatigue\n\t(";
             string TierTwoString = "\n• +1 Piloting Skill\n\t(";
             string TierThreeString = "\n• Increased Sensor and Spotting Range\n\t(";
@@ -234,7 +228,7 @@ namespace Pilot_Quirks
                 if (i == 3) break;
             }
             TagDesc = TagDesc.TrimEnd(charsToTrim);
-            TagDesc = TagDesc + "\n\n";
+            TagDesc += "\n\n";
             return TagDesc;
         }
     }

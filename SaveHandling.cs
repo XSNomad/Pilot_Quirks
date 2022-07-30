@@ -1,13 +1,9 @@
-﻿using System.IO;
-using System.Linq;
-using BattleTech;
-using BattleTech.Save.Test;
+﻿using BattleTech;
+using BattleTech.Save;
 using Harmony;
 using Newtonsoft.Json;
-using UnityEngine;
-using BattleTech.Save;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Pilot_Quirks
 {
@@ -120,7 +116,7 @@ namespace Pilot_Quirks
         {
             var sim = UnityGameInstance.BattleTechGame.Simulation;
             sim.CompanyTags.Where(tag => tag.StartsWith("PilotQuirks")).Do(x => sim.CompanyTags.Remove(x));
-            sim.CompanyTags.Add("PilotQuirksSave" + JsonConvert.SerializeObject(Pilot_Quirks.MechBonding.PilotsAndMechs));
+            sim.CompanyTags.Add("PilotQuirksSave" + JsonConvert.SerializeObject(MechBonding.PilotsAndMechs));
             sim.CompanyTags.Add("PilotQuirksSave2" + JsonConvert.SerializeObject(MechBonding.PQ_GUID));
         }
 
